@@ -1,29 +1,22 @@
 package org.rmit.mindfulapp;
 
-import android.annotation.SuppressLint;
-import android.content.ContentValues;
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
     private static final String TAG = "TEST TAG";
     ArrayList<Excercise> todoArray;
     ListView todoListView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,14 +25,11 @@ public class MainActivity extends AppCompatActivity {
         todoArray = new ArrayList<Excercise>();
         todoListView = findViewById(R.id.todoListView);
 
-        Excercise excercise1 = new Excercise(1,"Mindfulness breathing",0,"new");
-        Excercise excercise2 = new Excercise(2,"Bedtime retro",15,"new");
-        Excercise excercise3 = new Excercise(3,"Bedtime retrospection",15,"new");
+        Excercise excercise1 = new Excercise(1,"Mindfulness breathing",15,"NEW");
+        Excercise excercise2 = new Excercise(2,"Bedtime retro",15,"NEW");
 
         todoArray.add(excercise1);
         todoArray.add(excercise2);
-        todoArray.add(excercise3);
-
         displayExcercise();
     }
 
@@ -78,6 +68,42 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        if(resultCode == RESULT_OK){
+            if(requestCode == 1){
+                Integer excerStatusID = (Integer) Objects.requireNonNull(data.getExtras()).get("excerIdReturn");
+                for (Excercise excercise:todoArray) {
+                    if(excercise.getId() == excerStatusID){
+                        excercise.setStatus("DONE");
+                            displayExcercise();
+                    }
+                }
+            }else if(requestCode == 2){
+                Integer idIndicator = 0;
+                String returnName = (String) data.getExtras().get("returnName");
+                Integer returnDuration = (Integer) Objects.requireNonNull(data.getExtras()).get("returnDuration");
+                for (Excercise excercise:todoArray){
+                    if(excercise.id > idIndicator){
+                        idIndicator = excercise.id;
+                    }
+                }
+                idIndicator +=1;
+                addExcercise(idIndicator,returnName,returnDuration);
+            }else if(requestCode == 3){
+                Integer recievedEditID = (Integer) Objects.requireNonNull(data.getExtras()).get("returnID");
+                for (Excercise excercise:todoArray){
+                    if(excercise.id == recievedEditID){
+                        excercise.setSname(data.getExtras().get("returnName").toString());
+                        excercise.setDuration((Integer)data.getExtras().get("returnDuration"));
+                    }
+                }
+                displayExcercise();
+            }
+        }
+    }
+
     public void timerView(View view, ArrayList<Excercise> arrayList, Integer position) {
         Intent intent = new Intent(this,TimerActivity.class);
         intent.putExtra("duration",arrayList.get(position).duration);
@@ -91,25 +117,79 @@ public class MainActivity extends AppCompatActivity {
         todoListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-               timerView(view,todoArray,position);
+                timerView(view,todoArray,position);
+            }
+        });
+        todoListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                ShowUpMenuActivity showUpMenuActivity = new ShowUpMenuActivity(MainActivity.this,position);
+                showUpMenuActivity.showPopup(view);
+                return true;
             }
         });
     }
 
+    public void buttonReader(View view){
+        switch (view.getId()){
+            case R.id.addExcercise:
+                Intent intent = new Intent(this,AddEditActivity.class);
+                intent.putExtra("requestType","add");
+                startActivityForResult(intent,2);
+        }
+    }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode,resultCode,data);
-        if(resultCode == RESULT_OK){
-            if(requestCode == 1){
-                Integer excerStatusID = (Integer) Objects.requireNonNull(data.getExtras()).get("excerIdReturn");
-                for (Excercise excercise:todoArray) {
-                    if(excercise.getId() == excerStatusID){
-                        excercise.setStatus("Done");
-                            displayExcercise();
-                    }
-                }
+    public void addExcercise(int id, String name, int duration){
+        Excercise excercise = new Excercise(id, name,duration,"NEW");
+        todoArray.add(excercise);
+        displayExcercise();
+    }
+
+    public void deleteExcercise(int id){
+        todoArray.remove(id);
+    }
+
+    public void editExcercise(int id){
+        Intent intent = new Intent(this,AddEditActivity.class);
+        intent.putExtra("sentName",todoArray.get(id).sname);
+        intent.putExtra("sentDuration",todoArray.get(id).duration);
+        intent.putExtra("sentID",todoArray.get(id).id);
+        intent.putExtra("requestType","edit");
+        startActivityForResult(intent,3);
+    }
+
+
+
+    // CLASS FOR CREATION OF POPUP MENU
+    public class ShowUpMenuActivity implements PopupMenu.OnMenuItemClickListener {
+
+        private Activity context;
+        private Integer excerNum;
+
+        public ShowUpMenuActivity(Activity context, Integer excerNum) {
+            this.context = context;
+            this.excerNum = excerNum;
+        }
+
+        public void showPopup(View v){
+            PopupMenu popupMenu = new PopupMenu(context,v);
+            popupMenu.setOnMenuItemClickListener(this);
+            popupMenu.inflate(R.menu.popup_layout);
+            popupMenu.show();
+        }
+
+        @Override public boolean onMenuItemClick(MenuItem item){
+            switch (item.getItemId()){
+                case R.id.delete:
+                    deleteExcercise(excerNum);
+                    Toast.makeText(context,"item has been deleted",Toast.LENGTH_LONG).show();
+                    displayExcercise();
+                    break;
+                case R.id.edit:
+                    editExcercise(excerNum);
+                    break;
             }
+            return false;
         }
     }
 }

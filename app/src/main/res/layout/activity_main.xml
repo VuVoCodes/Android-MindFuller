@@ -23,10 +23,11 @@
         android:layout_height="336dp" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/addExcercise"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add Excercise" />
+        android:text="Add Excercise"
+        android:onClick="buttonReader"/>
 
 
 </LinearLayout>
