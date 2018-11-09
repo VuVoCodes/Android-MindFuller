@@ -1,35 +1,72 @@
 package org.rmit.mindfulapp;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.IntentService;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Environment;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.Toast;
+
+import org.json.JSONObject;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity{
     private static final String TAG = "TEST TAG";
     ArrayList<Excercise> todoArray;
     ListView todoListView;
+    private Boolean firstTime = null;
 
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public void permissionValidator(){
+        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            Log.v(TAG,"Permission is granted");
+        }else{
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // CHECK AND ASK FOR PERMISSION
+
+        permissionValidator();
+        isFirstTime();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        todoArray = new ArrayList<Excercise>();
         todoListView = findViewById(R.id.todoListView);
+        JsonTool jsonTool = new JsonTool();
+        todoArray = jsonTool.readFile();
 
-        Excercise excercise1 = new Excercise(1,"Mindfulness breathing",15,"NEW");
-        Excercise excercise2 = new Excercise(2,"Bedtime retro",15,"NEW");
-
-        todoArray.add(excercise1);
-        todoArray.add(excercise2);
+        repeat4AM();
         displayExcercise();
     }
 
@@ -37,27 +74,44 @@ public class MainActivity extends AppCompatActivity{
     protected void onPause() {
         super.onPause();
         Toast.makeText(MainActivity.this,"Pause",Toast.LENGTH_LONG).show();
-
+        repeat4AM();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Toast.makeText(MainActivity.this,"Resume",Toast.LENGTH_LONG).show();
-
+        repeat4AM();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Toast.makeText(MainActivity.this,"Destroy",Toast.LENGTH_LONG).show();
-
+        JsonTool jsonTool = new JsonTool();
+        jsonTool.arrayList = todoArray;
+        ArrayList<JSONObject>savedArray = new ArrayList<JSONObject>();
+        try {
+            Writer output;
+            File emptyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
+            emptyFile.delete();
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
+            output = new BufferedWriter(new FileWriter(String.valueOf(file)));
+            for (Excercise excerise:jsonTool.arrayList){
+                output.write(jsonTool.saveFile(excerise.id,excerise.sname,excerise.duration,excerise.status).toString() + "\n");
+                Toast.makeText(MainActivity.this,"Confirm",Toast.LENGTH_LONG).show();
+            }
+            output.close();
+            Log.d(TAG, savedArray.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
         Toast.makeText(MainActivity.this,"Restart",Toast.LENGTH_LONG).show();
+        repeat4AM();
 
     }
 
@@ -65,6 +119,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onStart() {
         super.onStart();
         Toast.makeText(MainActivity.this,"Start",Toast.LENGTH_LONG).show();
+        repeat4AM();
 
     }
 
@@ -81,16 +136,10 @@ public class MainActivity extends AppCompatActivity{
                     }
                 }
             }else if(requestCode == 2){
-                Integer idIndicator = 0;
                 String returnName = (String) data.getExtras().get("returnName");
                 Integer returnDuration = (Integer) Objects.requireNonNull(data.getExtras()).get("returnDuration");
-                for (Excercise excercise:todoArray){
-                    if(excercise.id > idIndicator){
-                        idIndicator = excercise.id;
-                    }
-                }
-                idIndicator +=1;
-                addExcercise(idIndicator,returnName,returnDuration);
+                addExcercise(returnName,returnDuration);
+
             }else if(requestCode == 3){
                 Integer recievedEditID = (Integer) Objects.requireNonNull(data.getExtras()).get("returnID");
                 for (Excercise excercise:todoArray){
@@ -139,8 +188,15 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    public void addExcercise(int id, String name, int duration){
-        Excercise excercise = new Excercise(id, name,duration,"NEW");
+    public void addExcercise(String name, int duration){
+        Integer idIndicator = 0;
+        for (Excercise excercise:todoArray){
+            if(excercise.id > idIndicator){
+                idIndicator = excercise.id;
+            }
+        }
+        idIndicator += 1;
+        Excercise excercise = new Excercise(idIndicator, name,duration,"NEW");
         todoArray.add(excercise);
         displayExcercise();
     }
@@ -157,8 +213,6 @@ public class MainActivity extends AppCompatActivity{
         intent.putExtra("requestType","edit");
         startActivityForResult(intent,3);
     }
-
-
 
     // CLASS FOR CREATION OF POPUP MENU
     public class ShowUpMenuActivity implements PopupMenu.OnMenuItemClickListener {
@@ -191,6 +245,72 @@ public class MainActivity extends AppCompatActivity{
             }
             return false;
         }
+    }
+
+    //Todo: TRY TO WORK OUT THE 4AM TIMER
+    public void checkDefaultExcercise(){
+        if(todoArray.size() == 0){
+            addExcercise("Mindfulness breathing",15);
+            addExcercise("BedTime Retrospection",15);
+            Toast.makeText(this,"Default Excercise Have been added",Toast.LENGTH_SHORT).show();
+        }else{
+            for (Excercise excercise:todoArray){
+                if(excercise.sname.equalsIgnoreCase("Mindfulness breathing") && excercise.status.equalsIgnoreCase("done")){
+                    excercise.setStatus("NEW");
+                }else if(excercise.sname.equalsIgnoreCase("BedTime Retrospection") && excercise.status.equalsIgnoreCase("done")){}
+                excercise.setStatus("NEW");
+            }
+        }
+    }
+
+    public void repeat4AM(){
+        Calendar calendar = Calendar.getInstance();
+
+        //SET TIME TO REPEAT
+        calendar.set(Calendar.HOUR_OF_DAY,4);
+        calendar.set(Calendar.MINUTE,0);
+        calendar.set(Calendar.SECOND,0);
+
+        if (calendar.getTimeInMillis() < System.currentTimeMillis())
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Intent serviceIntent = new Intent(this, FuncRunner.class);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 1, serviceIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+    }
+
+    public class FuncRunner extends IntentService {
+        private static final String TAG = "MyService";
+
+        /* Services must have a no-arg constructor */
+        public FuncRunner() {
+            super(TAG);
+        }
+        @Override
+        protected void onHandleIntent( @Nullable Intent intent) {
+            checkDefaultExcercise();
+            Toast.makeText(this,"Default Excercise Have been added",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isFirstTime() {
+        if (firstTime == null) {
+            SharedPreferences mPreferences = this.getSharedPreferences("first_time", Context.MODE_PRIVATE);
+            firstTime = mPreferences.getBoolean("firstTime", true);
+            if (firstTime) {
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean("firstTime", false);
+                editor.apply();
+                Excercise defaultExcercise1 = new Excercise(1,"mindfulness breathing".toUpperCase(),15,"NEW");
+                Excercise defaultExcercise2 = new Excercise(1,"bedtime retrospection".toUpperCase(),15,"NEW");
+                todoArray.add(defaultExcercise1);
+                todoArray.add(defaultExcercise2);
+                displayExcercise();
+            }else {
+               firstTime = false;
+            }
+        }
+        return firstTime;
     }
 }
 
