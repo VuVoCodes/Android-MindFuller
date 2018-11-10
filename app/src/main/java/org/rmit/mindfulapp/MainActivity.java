@@ -3,11 +3,12 @@ package org.rmit.mindfulapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
@@ -22,6 +23,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -40,31 +42,51 @@ public class MainActivity extends AppCompatActivity{
     ArrayList<Excercise> todoArray;
     ListView todoListView;
     private Boolean firstTime = null;
+    private TextView totalTimer;
 
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public void permissionValidator(){
-        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            Log.v(TAG,"Permission is granted");
-        }else{
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
-        }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         // CHECK AND ASK FOR PERMISSION
-
         permissionValidator();
-        isFirstTime();
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         todoListView = findViewById(R.id.todoListView);
+        totalTimer = findViewById(R.id.totalTimer);
+
+        //Initiate Json Tool for file reading
         JsonTool jsonTool = new JsonTool();
+        jsonTool.context = MainActivity.this;
         todoArray = jsonTool.readFile();
+        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + "zed");
+
+
+        //If array is empty then automatically add 2 default excercise with dialogalert included
+        if(todoArray.size() == 0){
+            addExcercise("Mindfulness Breathing",15);
+            addExcercise("BedTime Retrospection",15);
+            final AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+            alertDialog.setTitle("Default Excercise Have Been added");
+            alertDialog.setMessage("Excercises have been added for u");
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OKAY", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    alertDialog.dismiss();
+                    displayExcercise();
+                }
+            });
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "NAH", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    todoArray.clear();
+                    alertDialog.dismiss();
+                    displayExcercise();
+                }
+            });
+            alertDialog.show();
+        }
 
         repeat4AM();
         displayExcercise();
@@ -76,6 +98,7 @@ public class MainActivity extends AppCompatActivity{
         Toast.makeText(MainActivity.this,"Pause",Toast.LENGTH_LONG).show();
         repeat4AM();
     }
+
 
     @Override
     protected void onResume() {
@@ -153,6 +176,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
+    //EXTRA FUNCTIONS FOR THE APPLICATION
     public void timerView(View view, ArrayList<Excercise> arrayList, Integer position) {
         Intent intent = new Intent(this,TimerActivity.class);
         intent.putExtra("duration",arrayList.get(position).duration);
@@ -293,24 +317,14 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    private boolean isFirstTime() {
-        if (firstTime == null) {
-            SharedPreferences mPreferences = this.getSharedPreferences("first_time", Context.MODE_PRIVATE);
-            firstTime = mPreferences.getBoolean("firstTime", true);
-            if (firstTime) {
-                SharedPreferences.Editor editor = mPreferences.edit();
-                editor.putBoolean("firstTime", false);
-                editor.apply();
-                Excercise defaultExcercise1 = new Excercise(1,"mindfulness breathing".toUpperCase(),15,"NEW");
-                Excercise defaultExcercise2 = new Excercise(1,"bedtime retrospection".toUpperCase(),15,"NEW");
-                todoArray.add(defaultExcercise1);
-                todoArray.add(defaultExcercise2);
-                displayExcercise();
-            }else {
-               firstTime = false;
-            }
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public void permissionValidator(){
+        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            Log.v(TAG,"Permission is granted");
+        }else{
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
         }
-        return firstTime;
     }
 }
 

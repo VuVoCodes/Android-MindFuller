@@ -8,7 +8,6 @@
     android:padding="10dp"
     tools:context=".MainActivity">
 
-
     <TextView
         android:id="@+id/textView"
         android:layout_width="match_parent"
@@ -16,11 +15,10 @@
         android:text="Todo-List"
         android:textSize="25pt"/>
 
-
     <ListView
         android:id="@+id/todoListView"
         android:layout_width="match_parent"
-        android:layout_height="336dp" />
+        android:layout_height="321dp" />
 
     <Button
         android:id="@+id/addExcercise"
@@ -28,6 +26,14 @@
         android:layout_height="wrap_content"
         android:text="Add Excercise"
         android:onClick="buttonReader"/>
+
+    <TextView
+        android:id="@+id/totalTimer"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:text="TextView"
+        android:textAlignment="center"
+        android:textSize="10pt" />
 
 
 </LinearLayout>

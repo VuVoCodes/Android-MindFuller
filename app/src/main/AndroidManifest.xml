@@ -21,6 +21,7 @@
         </activity>
         <activity android:name=".TimerActivity" />
         <activity android:name=".AddEditActivity"></activity>
+        <service android:enabled="true" android:name=".MainActivity$FuncRunner" />
     </application>
 
 </manifest>
