@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity{
         JsonTool jsonTool = new JsonTool();
         jsonTool.context = MainActivity.this;
         todoArray = jsonTool.readFile();
-        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
+        totalTimer.setText("Total Time You Have Been MindFull:" + "\n" + getTime(totalTimeNum));
 
 
         // SET UP ARRAY WITH ITEM IN IT //
@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         Toast.makeText(MainActivity.this,"Resume",Toast.LENGTH_LONG).show();
-        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
+        totalTimer.setText("Total Time You Have Been MindFull:" + "\n" + getTime(totalTimeNum));
         repeat4AM();
     }
 
@@ -346,7 +346,6 @@ public class MainActivity extends AppCompatActivity{
             addExcercise("Mindfulness breathing",15);
             addExcercise("BedTime Retrospection",15);
             Toast.makeText(this,"Default Excercise Have been added",Toast.LENGTH_SHORT).show();
-            totalTimeNum = 0;
         }else{
             for (Excercise excercise:todoArray){
                 if(excercise.sname.equalsIgnoreCase("Mindfulness breathing") && excercise.status.equalsIgnoreCase("done")){
@@ -354,7 +353,6 @@ public class MainActivity extends AppCompatActivity{
                 }else if(excercise.sname.equalsIgnoreCase("BedTime Retrospection") && excercise.status.equalsIgnoreCase("done")){}
                 excercise.setStatus("NEW");
             }
-            totalTimeNum = 0;
         }
     }
 
