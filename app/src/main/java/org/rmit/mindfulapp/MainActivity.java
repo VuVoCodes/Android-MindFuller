@@ -35,14 +35,15 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity{
     private static final String TAG = "TEST TAG";
     ArrayList<Excercise> todoArray;
     ListView todoListView;
-    private Boolean firstTime = null;
     private TextView totalTimer;
+    private int totalTimeNum;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -56,11 +57,12 @@ public class MainActivity extends AppCompatActivity{
         todoListView = findViewById(R.id.todoListView);
         totalTimer = findViewById(R.id.totalTimer);
 
+        totalTimeNum = 0;
         //Initiate Json Tool for file reading
         JsonTool jsonTool = new JsonTool();
         jsonTool.context = MainActivity.this;
         todoArray = jsonTool.readFile();
-        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + "zed");
+        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
 
 
         //If array is empty then automatically add 2 default excercise with dialogalert included
@@ -104,6 +106,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onResume() {
         super.onResume();
         Toast.makeText(MainActivity.this,"Resume",Toast.LENGTH_LONG).show();
+        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum) + " min");
         repeat4AM();
     }
 
@@ -112,7 +115,7 @@ public class MainActivity extends AppCompatActivity{
         super.onDestroy();
         JsonTool jsonTool = new JsonTool();
         jsonTool.arrayList = todoArray;
-        ArrayList<JSONObject>savedArray = new ArrayList<JSONObject>();
+        ArrayList<JSONObject>savedArray = new ArrayList<>();
         try {
             Writer output;
             File emptyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
@@ -155,7 +158,8 @@ public class MainActivity extends AppCompatActivity{
                 for (Excercise excercise:todoArray) {
                     if(excercise.getId() == excerStatusID){
                         excercise.setStatus("DONE");
-                            displayExcercise();
+                        totalTimeNum += excercise.duration;
+                        displayExcercise();
                     }
                 }
             }else if(requestCode == 2){
@@ -244,12 +248,12 @@ public class MainActivity extends AppCompatActivity{
         private Activity context;
         private Integer excerNum;
 
-        public ShowUpMenuActivity(Activity context, Integer excerNum) {
+        ShowUpMenuActivity(Activity context, Integer excerNum) {
             this.context = context;
             this.excerNum = excerNum;
         }
 
-        public void showPopup(View v){
+        void showPopup(View v){
             PopupMenu popupMenu = new PopupMenu(context,v);
             popupMenu.setOnMenuItemClickListener(this);
             popupMenu.inflate(R.menu.popup_layout);
@@ -300,7 +304,7 @@ public class MainActivity extends AppCompatActivity{
         Intent serviceIntent = new Intent(this, FuncRunner.class);
         PendingIntent pendingIntent = PendingIntent.getService(this, 1, serviceIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+        Objects.requireNonNull(am).set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
     }
 
     public class FuncRunner extends IntentService {
@@ -325,6 +329,15 @@ public class MainActivity extends AppCompatActivity{
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
         }
+    }
+
+    public String getTime(int inputTime){
+        int convertedInputTime = inputTime * 60 * 1000;
+        int minute = (int) (convertedInputTime / 1000) / 60;
+        int second = (int) (convertedInputTime / 1000 % 60);
+
+        String timeFormat = String.format(Locale.getDefault(),"%02d:%02d",minute,second);
+        return timeFormat;
     }
 }
 
