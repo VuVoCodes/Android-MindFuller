@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity{
     ListView todoListView;
     private TextView totalTimer;
     private int totalTimeNum;
+    private boolean firstTime = Boolean.parseBoolean(null);
 
 
     @SuppressLint("SetTextI18n")
@@ -55,24 +56,28 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        if(isFirstTime()){
+            totalTimeNum = 0;
+            permissionValidator();
+        }
+        else{
+            permissionValidator();
+            totalTimeNum = retrieveTotalTime();
+        }
         // CHECK AND ASK FOR PERMISSION
-        permissionValidator();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         todoListView = findViewById(R.id.todoListView);
         totalTimer = findViewById(R.id.totalTimer);
-
-        totalTimeNum = 0;
         //Initiate Json Tool for file reading
         JsonTool jsonTool = new JsonTool();
         jsonTool.context = MainActivity.this;
         todoArray = jsonTool.readFile();
-        totalTimeNum = retrieveTotalTime();
         totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
-        Log.d(TAG, "onCreate: " + retrieveTotalTime());
 
 
-        //If array is empty then automatically add 2 default excercise with dialogalert included
+        // SET UP ARRAY WITH ITEM IN IT //
         if(todoArray.size() == 0){
             addExcercise("Mindfulness Breathing",15);
             addExcercise("BedTime Retrospection",15);
@@ -96,7 +101,7 @@ public class MainActivity extends AppCompatActivity{
             });
             alertDialog.show();
         }
-
+        Log.d(TAG, "TEST TIME: " + getTime(10080));
         repeat4AM();
         displayExcercise();
     }
@@ -108,38 +113,42 @@ public class MainActivity extends AppCompatActivity{
         repeat4AM();
     }
 
-
     @SuppressLint("SetTextI18n")
     @Override
     protected void onResume() {
         super.onResume();
         Toast.makeText(MainActivity.this,"Resume",Toast.LENGTH_LONG).show();
-        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum) + " min");
+        totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
         repeat4AM();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onDestroy() {
         super.onDestroy();
         JsonTool jsonTool = new JsonTool();
         jsonTool.arrayList = todoArray;
         ArrayList<JSONObject>savedArray = new ArrayList<>();
-        try {
-            Writer output;
-            File emptyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
-            emptyFile.delete();
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
-            output = new BufferedWriter(new FileWriter(String.valueOf(file)));
-            for (Excercise excerise:jsonTool.arrayList){
-                output.write(jsonTool.saveFile(excerise.id,excerise.sname,excerise.duration,excerise.status).toString() + "\n");
-                Toast.makeText(MainActivity.this,"Confirm",Toast.LENGTH_LONG).show();
+        if(permissionValidatorwithBoolean()){
+            try {
+                Writer output;
+                File emptyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
+                emptyFile.delete();
+                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
+                output = new BufferedWriter(new FileWriter(String.valueOf(file)));
+                for (Excercise excerise:jsonTool.arrayList){
+                    output.write(jsonTool.saveFile(excerise.id,excerise.sname,excerise.duration,excerise.status).toString() + "\n");
+                    Toast.makeText(MainActivity.this,"Confirm",Toast.LENGTH_LONG).show();
+                }
+                output.close();
+                Log.d(TAG, savedArray.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            output.close();
-            saveTotalTime();
-            Log.d(TAG, savedArray.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
+        }else{
+            finish();
         }
+        saveTotalTime();
     }
 
     @Override
@@ -158,6 +167,7 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode,resultCode,data);
@@ -168,6 +178,7 @@ public class MainActivity extends AppCompatActivity{
                     if(excercise.getId() == excerStatusID){
                         excercise.setStatus("DONE");
                         totalTimeNum += excercise.duration;
+                        Log.d(TAG, "onActivityResult: " + totalTimeNum);
                         displayExcercise();
                     }
                 }
@@ -175,7 +186,10 @@ public class MainActivity extends AppCompatActivity{
                 String returnName = (String) data.getExtras().get("returnName");
                 Integer returnDuration = (Integer) Objects.requireNonNull(data.getExtras()).get("returnDuration");
                 addExcercise(returnName,returnDuration);
-
+                if(!permissionValidatorwithBoolean()){
+                    Toast.makeText(this,"PLEASE APPROVE THE FOLLOWING",Toast.LENGTH_LONG);
+                    permissionValidator();
+                }
             }else if(requestCode == 3){
                 Integer recievedEditID = (Integer) Objects.requireNonNull(data.getExtras()).get("returnID");
                 for (Excercise excercise:todoArray){
@@ -251,6 +265,48 @@ public class MainActivity extends AppCompatActivity{
         startActivityForResult(intent,3);
     }
 
+    public String getTime(int inputTime){
+        int convertedInputTime = inputTime * 60 * 1000;
+        int week = (int) (convertedInputTime / (1000*60*60*24*7));
+        int day = (int) (convertedInputTime / (1000*60*60*24)) % 7;
+        int hour = (int) (convertedInputTime  / (1000*60*60)) % 24;
+        int minute = ((convertedInputTime / (1000*60)) % 60);
+        int second = (int) (convertedInputTime / 1000 % 60);
+
+        String timeFormat = String.format(Locale.getDefault()," %02d weeks: %02d days \n %02d hours: %02d minutes: %02d seconds",week,day,hour,minute,second);
+        return timeFormat;
+    }
+
+    //Save TotalTimer Everytime
+    public void saveTotalTime(){
+        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(TEXT,Integer.toString(totalTimeNum));
+        Log.d(TAG, "saveTotalTime: " + totalTimeNum);
+        editor.apply();
+    }
+
+    //Retrieve the timeNum
+    public int retrieveTotalTime(){
+        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
+        String totalNum = sharedPreferences.getString(TEXT,"");
+        return Integer.parseInt(totalNum);
+    }
+
+    // VALIDATE APP'S FIRST LAUNCH
+    private boolean isFirstTime(){
+        if(firstTime == Boolean.parseBoolean(null)){
+            SharedPreferences mPreferences = this.getSharedPreferences("first_time", Context.MODE_PRIVATE);
+            firstTime = mPreferences.getBoolean("firstTime", true);
+            if (firstTime) {
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean("firstTime", false);
+                editor.apply();
+            }
+        }
+        return firstTime;
+    }
+
     // CLASS FOR CREATION OF POPUP MENU
     public class ShowUpMenuActivity implements PopupMenu.OnMenuItemClickListener {
 
@@ -290,6 +346,7 @@ public class MainActivity extends AppCompatActivity{
             addExcercise("Mindfulness breathing",15);
             addExcercise("BedTime Retrospection",15);
             Toast.makeText(this,"Default Excercise Have been added",Toast.LENGTH_SHORT).show();
+            totalTimeNum = 0;
         }else{
             for (Excercise excercise:todoArray){
                 if(excercise.sname.equalsIgnoreCase("Mindfulness breathing") && excercise.status.equalsIgnoreCase("done")){
@@ -297,6 +354,7 @@ public class MainActivity extends AppCompatActivity{
                 }else if(excercise.sname.equalsIgnoreCase("BedTime Retrospection") && excercise.status.equalsIgnoreCase("done")){}
                 excercise.setStatus("NEW");
             }
+            totalTimeNum = 0;
         }
     }
 
@@ -314,8 +372,6 @@ public class MainActivity extends AppCompatActivity{
         PendingIntent pendingIntent = PendingIntent.getService(this, 1, serviceIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Objects.requireNonNull(am).set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
-
-        totalTimeNum = 0;
     }
 
     public class FuncRunner extends IntentService {
@@ -342,31 +398,9 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    public String getTime(int inputTime){
-        int convertedInputTime = inputTime * 60 * 1000;
-        int minute = (int) (convertedInputTime / 1000) / 60;
-        int second = (int) (convertedInputTime / 1000 % 60);
-
-        String timeFormat = String.format(Locale.getDefault(),"%02d:%02d",minute,second);
-        return timeFormat;
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public boolean permissionValidatorwithBoolean(){
+        return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
-
-    //Save TotalTimer Everytime
-    public void saveTotalTime(){
-        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(TEXT,Integer.toString(totalTimeNum));
-        Log.d(TAG, "saveTotalTime: " + totalTimeNum);
-        editor.apply();
-    }
-
-    //Retrieve the timeNum
-    public int retrieveTotalTime(){
-        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
-        String totalNum = sharedPreferences.getString(TEXT,"");
-        return Integer.parseInt(totalNum);
-    }
-
-
 }
 

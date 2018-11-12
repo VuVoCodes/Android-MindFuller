@@ -67,10 +67,11 @@ public class TimerActivity extends AppCompatActivity {
     }
 
     public void updateCounter(){
-        int minute = (int) (timeRemainMilliSec / 1000) / 60;
+        int hour = (int) (timeRemainMilliSec  / (1000*60*60)) % 24;
+        int minute = (int) (timeRemainMilliSec / (1000*60)) % 60;
         int second = (int) (timeRemainMilliSec / 1000 % 60);
 
-        String timeFormat = String.format(Locale.getDefault(),"%02d:%02d",minute,second);
+        String timeFormat = String.format(Locale.getDefault(),"%02d:%02d:%02d",hour,minute,second);
         timeView.setText(timeFormat);
     }
 
