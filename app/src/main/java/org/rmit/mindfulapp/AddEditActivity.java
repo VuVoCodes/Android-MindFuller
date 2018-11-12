@@ -1,5 +1,7 @@
 package org.rmit.mindfulapp;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
@@ -38,23 +40,37 @@ public class AddEditActivity extends AppCompatActivity {
     public void selectionReader(View view){
         switch (view.getId()){
             case R.id.saveButton:
-                if(requestType.equals("edit")){
-                    String returnName = addName.getText().toString();
-                    Integer returnDuration = Integer.parseInt(addDuration.getText().toString());
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.putExtra("returnName", returnName);
-                    intent.putExtra("returnDuration", returnDuration);
-                    intent.putExtra("returnID", sentId);
-                    setResult(RESULT_OK,intent);
-                    finish();
-                }else {
-                    String returnName = addName.getText().toString();
-                    Integer returnDuration = Integer.parseInt(addDuration.getText().toString());
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.putExtra("returnName", returnName);
-                    intent.putExtra("returnDuration", returnDuration);
-                    setResult(RESULT_OK, intent);
-                    finish();
+                if(addName.getText().toString().matches("") || addDuration.getText().toString().matches("")){
+                    final AlertDialog alertDialog = new AlertDialog.Builder(AddEditActivity.this).create();
+                    alertDialog.setTitle("You must fill the necessary field");
+                    alertDialog.setMessage("You must fill the necessary field");
+                    alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OKAY", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            alertDialog.dismiss();
+
+                        }
+                    });
+                    alertDialog.show();
+                }else{
+                    if(requestType.equals("edit")){
+                        String returnName = addName.getText().toString();
+                        Integer returnDuration = Integer.parseInt(addDuration.getText().toString());
+                        Intent intent = new Intent(this, MainActivity.class);
+                        intent.putExtra("returnName", returnName);
+                        intent.putExtra("returnDuration", returnDuration);
+                        intent.putExtra("returnID", sentId);
+                        setResult(RESULT_OK,intent);
+                        finish();
+                    }else {
+                        String returnName = addName.getText().toString();
+                        Integer returnDuration = Integer.parseInt(addDuration.getText().toString());
+                        Intent intent = new Intent(this, MainActivity.class);
+                        intent.putExtra("returnName", returnName);
+                        intent.putExtra("returnDuration", returnDuration);
+                        setResult(RESULT_OK, intent);
+                        finish();
+                    }
                 }
                 break;
             case R.id.cancelButton:
