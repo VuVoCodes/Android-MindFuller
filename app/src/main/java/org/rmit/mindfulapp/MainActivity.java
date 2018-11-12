@@ -1,6 +1,7 @@
 package org.rmit.mindfulapp;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
@@ -9,6 +10,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
@@ -38,6 +40,8 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.Objects;
 
+import static android.provider.Telephony.Mms.Part.TEXT;
+
 public class MainActivity extends AppCompatActivity{
     private static final String TAG = "TEST TAG";
     ArrayList<Excercise> todoArray;
@@ -46,6 +50,7 @@ public class MainActivity extends AppCompatActivity{
     private int totalTimeNum;
 
 
+    @SuppressLint("SetTextI18n")
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +67,9 @@ public class MainActivity extends AppCompatActivity{
         JsonTool jsonTool = new JsonTool();
         jsonTool.context = MainActivity.this;
         todoArray = jsonTool.readFile();
+        totalTimeNum = retrieveTotalTime();
         totalTimer.setText("Total Time You Have Been MindFul:" + "\n" + getTime(totalTimeNum));
+        Log.d(TAG, "onCreate: " + retrieveTotalTime());
 
 
         //If array is empty then automatically add 2 default excercise with dialogalert included
@@ -102,6 +109,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onResume() {
         super.onResume();
@@ -127,6 +135,7 @@ public class MainActivity extends AppCompatActivity{
                 Toast.makeText(MainActivity.this,"Confirm",Toast.LENGTH_LONG).show();
             }
             output.close();
+            saveTotalTime();
             Log.d(TAG, savedArray.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -305,6 +314,8 @@ public class MainActivity extends AppCompatActivity{
         PendingIntent pendingIntent = PendingIntent.getService(this, 1, serviceIntent, PendingIntent.FLAG_CANCEL_CURRENT);
         AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Objects.requireNonNull(am).set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+
+        totalTimeNum = 0;
     }
 
     public class FuncRunner extends IntentService {
@@ -339,5 +350,23 @@ public class MainActivity extends AppCompatActivity{
         String timeFormat = String.format(Locale.getDefault(),"%02d:%02d",minute,second);
         return timeFormat;
     }
+
+    //Save TotalTimer Everytime
+    public void saveTotalTime(){
+        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(TEXT,Integer.toString(totalTimeNum));
+        Log.d(TAG, "saveTotalTime: " + totalTimeNum);
+        editor.apply();
+    }
+
+    //Retrieve the timeNum
+    public int retrieveTotalTime(){
+        SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
+        String totalNum = sharedPreferences.getString(TEXT,"");
+        return Integer.parseInt(totalNum);
+    }
+
+
 }
 
