@@ -344,14 +344,13 @@ public class MainActivity extends AppCompatActivity{
     public void checkDefaultExcercise(){
         if(todoArray.size() == 0){
             addExcercise("Mindfulness breathing",15);
-            addExcercise("BedTime Retrospection",15);
+            addExcercise("BedTime retrospection",15);
             Toast.makeText(this,"Default Excercise Have been added",Toast.LENGTH_SHORT).show();
         }else{
             for (Excercise excercise:todoArray){
-                if(excercise.sname.equalsIgnoreCase("Mindfulness breathing") && excercise.status.equalsIgnoreCase("done")){
+                if(excercise.sname.matches("Mindfulness breathing") && excercise.status.matches("DONE") && excercise.sname.matches("BedTime retrospection") && excercise.status.matches("DONE")){
                     excercise.setStatus("NEW");
-                }else if(excercise.sname.equalsIgnoreCase("BedTime Retrospection") && excercise.status.equalsIgnoreCase("done")){}
-                excercise.setStatus("NEW");
+                }
             }
         }
     }
