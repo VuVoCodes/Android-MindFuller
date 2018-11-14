@@ -78,4 +78,7 @@ public class AddEditActivity extends AppCompatActivity {
                 break;
         }
     }
+    public void exitView(View view){
+        finish();
+    }
 }

@@ -45,6 +45,6 @@
         android:layout_alignBottom="@+id/saveButton"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="69dp"
-        android:onClick="selectionReader"
+        android:onClick="exitView"
         android:text="CANCEL" />
 </RelativeLayout>
