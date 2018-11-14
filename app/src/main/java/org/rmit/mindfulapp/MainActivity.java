@@ -47,8 +47,9 @@ public class MainActivity extends AppCompatActivity{
     ArrayList<Excercise> todoArray;
     ListView todoListView;
     private TextView totalTimer;
-    private int totalTimeNum;
+    private long totalTimeNum;
     private boolean firstTime = Boolean.parseBoolean(null);
+    private long miliSecReturn;
 
 
     @SuppressLint("SetTextI18n")
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity{
 
         if(isFirstTime()){
             totalTimeNum = 0;
+            miliSecReturn = 0;
             permissionValidator();
         }
         else{
@@ -101,7 +103,6 @@ public class MainActivity extends AppCompatActivity{
             });
             alertDialog.show();
         }
-        Log.d(TAG, "TEST TIME: " + getTime(10080));
         repeat4AM();
         displayExcercise();
     }
@@ -174,10 +175,11 @@ public class MainActivity extends AppCompatActivity{
         if(resultCode == RESULT_OK){
             if(requestCode == 1){
                 Integer excerStatusID = (Integer) Objects.requireNonNull(data.getExtras()).get("excerIdReturn");
+                Long getMilisec = (Long) Objects.requireNonNull(data.getExtras()).get("statusReturn");
                 for (Excercise excercise:todoArray) {
                     if(excercise.getId() == excerStatusID){
                         excercise.setStatus("DONE");
-                        totalTimeNum += excercise.duration;
+                        totalTimeNum += getMilisec;
                         Log.d(TAG, "onActivityResult: " + totalTimeNum);
                         displayExcercise();
                     }
@@ -199,6 +201,19 @@ public class MainActivity extends AppCompatActivity{
                     }
                 }
                 displayExcercise();
+            }
+        }else if(resultCode == RESULT_CANCELED){
+            if(requestCode == 1){
+                try {
+                    Long getMilisec = (Long) Objects.requireNonNull(data.getExtras()).get("statusReturn");
+                    miliSecReturn = getMilisec;
+                    totalTimeNum += miliSecReturn;
+                    Log.d(TAG, "onActivityResult: SUCCESS");
+                }catch (Exception e){
+                    Log.d(TAG, "onActivityResult: " + "failed");
+                    miliSecReturn = 0;
+                }
+
             }
         }
     }
@@ -265,15 +280,17 @@ public class MainActivity extends AppCompatActivity{
         startActivityForResult(intent,3);
     }
 
-    public String getTime(int inputTime){
-        int convertedInputTime = inputTime * 60 * 1000;
-        int week = (int) (convertedInputTime / (1000*60*60*24*7));
-        int day = (int) (convertedInputTime / (1000*60*60*24)) % 7;
-        int hour = (int) (convertedInputTime  / (1000*60*60)) % 24;
-        int minute = ((convertedInputTime / (1000*60)) % 60);
-        int second = (int) (convertedInputTime / 1000 % 60);
-
+    public String getTime(long inputTime){
+        inputTime += miliSecReturn;
+        totalTimeNum += miliSecReturn;
+        Log.d(TAG, "getTimeInput: " + inputTime);
+        int week = (int) (inputTime / (1000*60*60*24*7));
+        int day = (int) (inputTime / (1000*60*60*24)) % 7;
+        int hour = (int) (inputTime  / (1000*60*60)) % 24;
+        int minute = (int) ((inputTime / (1000*60)) % 60);
+        int second = (int) (inputTime / 1000 % 60);
         String timeFormat = String.format(Locale.getDefault()," %02d weeks: %02d days \n %02d hours: %02d minutes: %02d seconds",week,day,hour,minute,second);
+        saveTotalTime();
         return timeFormat;
     }
 
@@ -281,16 +298,17 @@ public class MainActivity extends AppCompatActivity{
     public void saveTotalTime(){
         SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(TEXT,Integer.toString(totalTimeNum));
+        editor.putString(TEXT,Long.toString(totalTimeNum));
         Log.d(TAG, "saveTotalTime: " + totalTimeNum);
         editor.apply();
     }
 
     //Retrieve the timeNum
-    public int retrieveTotalTime(){
+    public long retrieveTotalTime(){
         SharedPreferences sharedPreferences = getSharedPreferences("totalTime",Context.MODE_PRIVATE);
         String totalNum = sharedPreferences.getString(TEXT,"");
-        return Integer.parseInt(totalNum);
+        Log.d(TAG, "retrieveTotalTime: " + totalNum);
+        return Long.parseLong(totalNum);
     }
 
     // VALIDATE APP'S FIRST LAUNCH

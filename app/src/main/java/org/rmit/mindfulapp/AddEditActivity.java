@@ -76,7 +76,6 @@ public class AddEditActivity extends AppCompatActivity {
             case R.id.cancelButton:
                 finish();
                 break;
-
         }
     }
 }
