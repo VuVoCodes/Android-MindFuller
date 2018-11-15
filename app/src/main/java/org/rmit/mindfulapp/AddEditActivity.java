@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 public class AddEditActivity extends AppCompatActivity {
     private EditText addName;
@@ -17,6 +18,7 @@ public class AddEditActivity extends AppCompatActivity {
     private Button cancelButton;
     private String requestType;
     private Integer sentId;
+    private TextView textTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +26,7 @@ public class AddEditActivity extends AppCompatActivity {
         setContentView(R.layout.add_edit_main);
         addName = findViewById(R.id.inputName);
         addDuration = findViewById(R.id.inputDuration);
+        textTitle = findViewById(R.id.titleText);
         saveButton = findViewById(R.id.saveButton);
         cancelButton = findViewById(R.id.cancelButton);
 
@@ -34,6 +37,9 @@ public class AddEditActivity extends AppCompatActivity {
             addName.setText(intent.getExtras().get("sentName").toString());
             addDuration.setText(intent.getExtras().get("sentDuration").toString());
             sentId = (Integer) intent.getExtras().get("sentID");
+            textTitle.setText("EDIT EXCERCISE");
+        }else {
+            textTitle.setText("ADD EXCERCISE");
         }
     }
 
