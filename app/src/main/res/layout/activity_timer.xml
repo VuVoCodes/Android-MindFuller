@@ -43,5 +43,18 @@
         android:onClick="endTimer"
         android:text="End/Cancel" />
 
+    <TextView
+        android:id="@+id/textExcerciseName"
+        android:layout_width="286dp"
+        android:layout_height="85dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="396dp"
+        android:text="TextView"
+        android:textAlignment="center"
+        android:textSize="12pt" />
+
 
 </RelativeLayout>

@@ -28,18 +28,21 @@ public class TimerActivity extends AppCompatActivity {
     private static final String TAG ="tag";
     private int excerID;
     private int excerDuration;
+    private TextView nameView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_timer);
         timeView = findViewById(R.id.timeView);
+        nameView = findViewById(R.id.textExcerciseName);
         controlButton = findViewById(R.id.controlButton);
         endButton = findViewById(R.id.endButton);
 
         Intent intent = getIntent();
         excerDuration = (Integer) intent.getExtras().get("duration");
         excerID = (Integer) intent.getExtras().get("excerID");
+        nameView.setText(intent.getExtras().get("excerciseName").toString());
         Log.d(TAG, String.valueOf(excerDuration));
         timeRemainMilliSec = excerDuration * 60 * 1000;
         initalTime = excerDuration * 60 * 1000;

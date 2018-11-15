@@ -223,6 +223,7 @@ public class MainActivity extends AppCompatActivity{
         Intent intent = new Intent(this,TimerActivity.class);
         intent.putExtra("duration",arrayList.get(position).duration);
         intent.putExtra("excerID", arrayList.get(position).id);
+        intent.putExtra("excerciseName", arrayList.get(position).sname);
         startActivityForResult(intent,1);
     }
 
