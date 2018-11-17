@@ -32,6 +32,7 @@ public class JsonTool {
     ArrayList<Excercise> arrayList;
     Activity context;
 
+    // SAVE THE JSON FILE
     public JSONObject saveFile(int id, String name, int duration, String status){
         JSONObject object = new JSONObject();
         try{
@@ -45,6 +46,7 @@ public class JsonTool {
         return object;
     }
 
+    // READ JSON FILE
     @RequiresApi(api = Build.VERSION_CODES.M)
     public ArrayList<Excercise> readFile(){
         if (context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
@@ -61,6 +63,7 @@ public class JsonTool {
         }
     }
 
+    // FIND THE JSON FILE FROM THE EXTERNAL STORAGE OF THE MACHING
     public ArrayList<Excercise> getJosonFile(){
         File emptyFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"MindFuller.txt");
         ArrayList<Excercise> recievedArray = new ArrayList<>();

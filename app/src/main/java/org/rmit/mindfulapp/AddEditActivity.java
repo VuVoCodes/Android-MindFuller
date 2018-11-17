@@ -33,6 +33,8 @@ public class AddEditActivity extends AppCompatActivity {
         Intent intent = getIntent();
         requestType = (String) intent.getExtras().get("requestType");
 
+
+        // VALIDATE THE TYPE OF REQUEST FROM MAINACTIVITY
         if(requestType.equals("edit")){
             addName.setText(intent.getExtras().get("sentName").toString());
             addDuration.setText(intent.getExtras().get("sentDuration").toString());
@@ -43,6 +45,8 @@ public class AddEditActivity extends AppCompatActivity {
         }
     }
 
+
+    //A FUNCTION THAT CHECK BUTTON IDS
     public void selectionReader(View view){
         switch (view.getId()){
             case R.id.saveButton:

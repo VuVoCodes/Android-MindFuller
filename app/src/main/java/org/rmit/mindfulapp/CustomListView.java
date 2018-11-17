@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import java.util.ArrayList;
 
+// CUSTOMIZATIONS OF THE ITEM IN THE LSITVIEW
 public class CustomListView extends ArrayAdapter<Excercise> {
 
     private ArrayList<Excercise> todoArray;
